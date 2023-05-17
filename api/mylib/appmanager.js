@@ -1,7 +1,7 @@
 const { writeFile, readFileSync } = require('fs');
 const LoginManager = require('./loginmanager');
 
-class Fullkube {
+class AppManager {
     constructor (cfg) {
         this.cfgpath = cfg;
     }
@@ -81,4 +81,4 @@ class Fullkube {
     }
 }
 
-module.exports = Fullkube;
+module.exports = AppManager;

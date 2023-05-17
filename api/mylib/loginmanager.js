@@ -12,13 +12,12 @@ class LoginManager {
     }
     genToken (user){
         var token = jwt.sign({
-            authuser: user
+            authuser: user, expiry: this.tokenexpr
           }, this.secret, { expiresIn: this.tokenexpr });
         return token;
     }
     verifyToken (token){
         var decoded = {success: false, error: ''};
-        console.log(token);
         try {
             var ret = jwt.verify(token, this.secret);
             decoded.authuser = ret.authuser;

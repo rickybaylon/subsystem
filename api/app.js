@@ -11,20 +11,20 @@ var usersRouter = require('./routes/users');
 var app = express();
 
 // load fullkube 
-const Fullkube = require('./fk/fkmanager');
-fkcfgfile = './cfg/fullkube.json';
-fk = new Fullkube(fkcfgfile);
-fk.loadConfig();
-app.set('fk', fk);
+const AppManager = require('./mylib/appmanager');
+apcfgfile = './cfg/config.json';
+ap = new AppManager(apcfgfile);
+ap.loadConfig();
+app.set('ap', ap);
 
 // custom validator
-const InputValidator = require('./fk/validators');
+const InputValidator = require('./mylib/validators');
 iv = new InputValidator();
 app.set('iv', iv);
 
 // Load login manager
-const LoginManager = require('./fk/loginmanager');
-lm = new LoginManager(fk.data.secretkey);
+const LoginManager = require('./mylib/loginmanager');
+lm = new LoginManager(ap.data.secretkey);
 app.set('lm', lm);
 
 // view engine setup
