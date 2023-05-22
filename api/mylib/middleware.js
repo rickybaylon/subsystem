@@ -9,24 +9,40 @@ function getUser (req, res, next){
     }
   }
   
-  function validateInput (req, res, next) {
-    iv = req.app.get('iv');
-    ap = req.app.get('ap');
-    if (! req.body){}
-    vr = iv.validateUser(req.body);
-    if (vr.isOK) {
-      usernames = ap.getUserNames();
-      if (usernames.includes(req.body.username) && req.method === 'POST'){
-        res.status(409).json({message: req.body.username+" username already exist."});
-      } else {
-        next();
+  function validateInput (schema_type) {
+    return function(req, res, next) {
+      iv = req.app.get('iv');
+      ap = req.app.get('ap');
+      if (! req.body){
+        res.status(422).json({message: "Empty request body!"});
       }
-    } else {
-      res.status(400).json({message: vr.message});   
+      switch (schema_type) {
+        case 'Users':
+          vr = iv.validateUser(req.body);
+          if (vr.isOK) {
+            usernames = ap.getUserNames();
+            if (usernames.includes(req.body.username) && req.method == 'POST'){
+              res.status(409).json({message: req.body.username+" username already exist."});
+            } else {
+              next();
+            }
+          } else {
+            res.status(400).json({message: vr.message});   
+          }
+          break;
+        case 'Tokens':
+          vr = iv.validateToken(req.body);
+          if (vr.isOK) {
+            next();
+          } else {
+            res.status(400).json({message: vr.message});
+          }
+          break;
+      }
     }
   }
   
-  function loginRequired(role){
+  function loginRequired(roles){
 		return function(req, res, next){
     	lm = req.app.get('lm');
     	const token = (req.headers.authorization || '').split(' ')[1] || '';
@@ -35,9 +51,18 @@ function getUser (req, res, next){
       	if (decoded.success) {
 					ap = req.app.get('ap');
 					userrecord = ap.getUserByName(decoded.authuser);
-					if (userrecord.role === role) {
-        		req.username = decoded.authuser;
-        		next();
+					if (roles.includes(userrecord.role)) {
+            tokenrecord = ap.getTokenByTokenId(decoded.token_id);
+            if (tokenrecord){
+              if (! tokenrecord.is_active) {
+                res.status(400).json({message: `Access denied for consumer ${tokenrecord.owner}!`});
+              } else {
+                next();
+              }
+            } else {
+        		  req.username = decoded.authuser;
+        		  next();
+            }
 					} else {
 						res.status(400).json({message: `Access denied for user ${userrecord.username}!`});
 					}
@@ -64,7 +89,7 @@ function getUser (req, res, next){
         res.status(400).json({message: "Invalid password."});
       }
     } else {
-      res.status(404).json({message: "Invalid user."});
+      res.status(403).json({message: "Invalid user."});
     }
   }
 

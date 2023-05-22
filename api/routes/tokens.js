@@ -1,16 +1,17 @@
 var express = require('express');
 var router = express.Router();
 var md = require('../mylib/middleware');
+const crypto = require('crypto');
 
 /* GET users listing with CRUD */
-var role = "admin";
+var roles = ["admin"];
 var schema_type = 'Tokens';
-router.get('/', md.loginRequired(role), function(req, res, next) {
+router.get('/', md.loginRequired(roles), function(req, res, next) {
   ap = req.app.get('ap');
   res.json({message: 'Get all tokens api', tokens: ap.data.Tokens});
 })
 .get(
-  '/:id(\\d+)', md.loginRequired(role), function(req, res){
+  '/:id(\\d+)', md.loginRequired(roles), function(req, res){
     ap = req.app.get('ap');
     token = ap.getToken(req.params.id)
     if(typeof token === 'undefined'){
@@ -20,7 +21,7 @@ router.get('/', md.loginRequired(role), function(req, res, next) {
     }
   }
 ).post(
-  '/new', md.loginRequired(role), function(req, res){
+  '/new', md.loginRequired(roles), function(req, res){
     ap = req.app.get('ap');
     data = req.body;
     if ( typeof data.owner === 'undefined' || typeof data.expiry === 'undefined') { 
@@ -28,9 +29,12 @@ router.get('/', md.loginRequired(role), function(req, res, next) {
     } else {
       userdata = ap.getUserByName(data.owner);
       if (userdata === 'undefined') {
+        salt = crypto.randomBytes(16).toString('hex');
+        pw = crypto.randomBytes(8).toString('hex');
+        hash = crypto.pbkdf2Sync(pw, salt, 1000, 32, `sha512`).toString(`hex`);
         userdata = {
           username: data.owner,
-          password: "cc0401fdb71ca563e47de6eb803954aa983f3d6976c6b84545980ce5f5931138:d677cca1c02c61e2bf8b3574c16853f0",
+          password: hash+':'+salt,
           role: "consumer"
         };
         ap.addUser(userdata);
@@ -49,14 +53,14 @@ router.get('/', md.loginRequired(role), function(req, res, next) {
     }
   }
 ).put(
-  '/:id(\\d+)', md.loginRequired(role), md.validateInput(schema_type), function(req, res){
+  '/:id(\\d+)', md.loginRequired(roles), md.validateInput(schema_type), function(req, res){
     ap = req.app.get('ap');
     tokendata = req.body;
     ap.updateToken(req.params.id, tokendata);
     res.json({updated: ap.data.Tokens[req.params.id]});
   } 
 ).delete(
-  '/:id(\\d+)', md.loginRequired(role), function(req, res){
+  '/:id(\\d+)', md.loginRequired(roles), function(req, res){
     ap = req.app.get('ap');
     rmtoken = ap.getToken(req.params.id);
     ap.rmToken(req.params.id);

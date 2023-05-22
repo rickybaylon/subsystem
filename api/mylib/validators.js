@@ -34,10 +34,21 @@ class InputValidator {
         }
         for (var key in user) {
             if (! this.sk.userKeys.includes(key)) {
-                return {message: "Invalid key: "+key+".", isOK: false};
+                return {message: `Invalid key: ${key}`, isOK: false};
             }
         }
         return {message: "Input OK", isOK: true};
+    }
+    validateToken (token) {
+      if (typeof token.token === 'undefined' || typeof token.token_id === 'undefined' || typeof token.is_active === 'undefined' || typeof token.owner === 'undefined') {
+        return {message: "missing parameter", isOK: false};
+      }
+      for (var key in token) {
+        if (! this.sk.tokenKeys.includes(key)) {
+          return {message: `Invalid key: ${key}`, isOK: false};
+        }
+      }
+      return {message: "Input OK", isOK: true};
     }
 }
 
